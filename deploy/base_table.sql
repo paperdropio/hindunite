@@ -44,3 +44,11 @@ ALTER USER 'simba'@'localhost' IDENTIFIED WITH mysql_native_password BY 'jupiter
 
 flush privileges;
 
+
+-- Active: 1668182717629@@127.0.0.1@3306
+CREATE DATABASE IF NOT EXISTS hu
+    DEFAULT CHARACTER SET = 'utf8mb4';
+
+CREATE USER 'simba'@'localhost' IDENTIFIED WITH mysql_native_password BY 'jupiter22@';
+
+GRANT ALL PRIVILEGES ON database_name.hu TO 'simba'@'localhost';

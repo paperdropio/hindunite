@@ -17,7 +17,7 @@ module.exports = (sequelize) => {
 		},
 		password: {
 			allowNull: false,
-			type: DataTypes.BLOB,
+			type: DataTypes.STRING,
 		},
 		name: {
 			allowNull: false,

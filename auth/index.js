@@ -1,10 +1,14 @@
-const { seq: { models: { users, userVerifications } }, seq } = require('../utility/orm')
-const { QueryTypes } = require('sequelize');
+const { seq } = require('../utility/orm')
 const { numberGenerator } = require('../utility/numberGenerator');
 const bcrypt = require('bcrypt')
 const verificationResult = require('../enums/verificationResult');
+const createUserResult = require('../enums/createUserResult');
+const loginUserResult = require('../enums/loginUserResult');
+const GenericResponse = require('../common/response');
 
-const isEmailRegistered = async ({email}) => {
+const isEmailRegistered = async ({ email }) => {
+
+    const { users } = seq.models;
     const existingUser = await users.findOne({
         where: {
             email,
@@ -15,18 +19,34 @@ const isEmailRegistered = async ({email}) => {
     return existingUser && true;
 }
 
-const createUser = async ({email, name, password}) => {
+const createUser = async ({ email, name, password }) => {
+    const { users } = seq.models;
+    const emailReg = await isEmailRegistered({ email });
+
+    if (emailReg) {
+        const user = await users.findOne({
+            where: {
+                email
+            }
+        });
+
+        if (user.isConfirmed) {
+            return GenericResponse.failed(createUserResult.EMAIL_ALREADY_REGISTERED);
+        }
+
+        return GenericResponse.failed(createUserResult.USER_ACCOUNT_NOT_CONFIRMED);
+    }
 
     const hash = await bcrypt.hash(password, 10);
 
     const newUser = users.build({ name, email, password: hash });
     await newUser.save();
 
-    return newUser.id && true;
+    return GenericResponse.success({ id: newUser.id });
 }
 
-
-const loginUser = async ({email, password}) => {
+const loginUser = async ({ email, password }) => {
+    const { users } = seq.models;
 
     const user = await users.findOne({
         where: {
@@ -35,10 +55,15 @@ const loginUser = async ({email, password}) => {
         }
     });
 
-    if ( user ) {
+    if (user) {
+
+        if (!user.isConfirmed) {
+            return GenericResponse.failed({ code: loginUserResult.USER_NOT_CONFIRMED });
+        }
+
         const passwordMatch = await bcrypt.compareSync(password, user.password);
 
-        if ( passwordMatch ) {
+        if (passwordMatch) {
             user.set({
                 lastLoginOn: (new Date()),
                 numOfFailedPasswordAttempt: 0
@@ -46,24 +71,25 @@ const loginUser = async ({email, password}) => {
         }
         else {
             user.set({
-                numOfFailedPasswordAttempt: user.numOfFailedPasswordAttempt+1
+                numOfFailedPasswordAttempt: user.numOfFailedPasswordAttempt + 1
             })
         }
 
-        await user.update();
+        await user.save();
 
-        return passwordMatch;
+        return GenericResponse.success({ id: user.id });
     }
 
-    return false;
+    return GenericResponse.failed();
 }
 
+const logoutUser = async ({ id }) => {
 
-const logoutUser = async ({id}) => {
+    const { users } = seq.models;
 
     const user = await users.findByPk(id);
 
-    if ( user ) {
+    if (user) {
         user.set({
             lastLogout: (new Date())
         })
@@ -72,21 +98,49 @@ const logoutUser = async ({id}) => {
     }
 }
 
-const sendVerificationEmail = async ({id, email}) => {
+const sendVerificationEmail = async ({ email }) => {
+
+    const { userVerifications, users } = seq.models;
+
+    const user = await users.findOne({
+        where: {
+            email
+        }
+    });
+
+    if (!user) {
+        return GenericResponse.failed();
+    }
+
+    if (user.isConfirmed) {
+        return GenericResponse.failed();
+    }
+
+    await userVerifications.update(
+        {
+            expiresOn: (new Date())
+        },
+        {
+            where: {
+                userId: id
+            }
+        }
+    );
 
     const verificationCode = numberGenerator();
-    
+
     const expiresOn = (new Date());
     expiresOn.setDate(expiresOn.getDate() + 1);
-   
-    const verificationRecord = userVerifications.build({ userId: id, verificationCode, expiresOn  })
+
+    const verificationRecord = userVerifications.build({ userId: id, verificationCode, expiresOn })
 
     await verificationRecord.save();
 
-    //send email here...
+    return GenericResponse.success();
 }
 
-const verifyEmail = async ({verificationCode}) => {
+const verifyEmail = async ({ verificationCode }) => {
+    const { userVerifications, users } = seq.models;
 
     const verificationRecord = await userVerifications.findOne({
         where: {
@@ -95,39 +149,39 @@ const verifyEmail = async ({verificationCode}) => {
         }
     });
 
-    if ( verificationRecord ) {
+    if (verificationRecord) {
         if (verificationRecord.expiresOn < (new Date())) {
-            return verificationResult.CODE_EXPIRED_ON;
+            return GenericResponse.failed({ code: verificationResult.CODE_EXPIRED_ON });
         }
 
-        if ( verificationRecord.verifiedOn){
-            return verificationResult.CODE_ALREADY_VERIFIED;
+        if (verificationRecord.verifiedOn) {
+            return GenericResponse.failed({ code: verificationResult.CODE_ALREADY_VERIFIED });
         }
 
-        const user = await users.findByPk(id);
-        if ( user.isDeleted || user.isConfirmed ){
-            return verificationResult.USER_ALREADY_VERIFIED;
+        const user = await users.findByPk(verificationRecord.id);
+        if (user.isDeleted || user.isConfirmed) {
+            return GenericResponse.failed({ code: verificationResult.USER_ALREADY_VERIFIED });
         }
-        
-        verificationCode.set({
+
+        verificationRecord.set({
             verifiedOn: (new Date())
         })
-        
-        await verificationRecord.update();
-        
+
+        await verificationRecord.save();
+
         user.set({
             isConfirmed: true
         });
-        await user.update();
+        await user.save();
 
-        return verificationResult.VERIFIED;
+        return GenericResponse.success({ code: verificationResult.VERIFIED });
     }
-    
-    return verificationResult.CODE_NOT_FOUND;
+
+    return GenericResponse.failed({ code: verificationResult.CODE_NOT_FOUND });
 }
 
 module.exports = {
-    createUser, 
+    createUser,
     isEmailRegistered,
     sendVerificationEmail,
     verifyEmail,

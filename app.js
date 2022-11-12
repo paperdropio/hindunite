@@ -2,7 +2,7 @@ var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
-var logger = require('morgan');
+var logger = require('./common/logger');
 var cors = require('cors');
 var session = require('express-session')
 var MySQLStore = require('express-mysql-session')(session)
@@ -27,7 +27,6 @@ app.use(session({
 }));
 
 app.use(cors());
-app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
@@ -60,8 +59,12 @@ app.use((error, request, response, next) => {
 
 //do something when app is closing
 process.on('exit', async () => {
-  await sequelizeInstance.closeConnection();
-  await closeConnection();
+  try {
+    await sequelizeInstance.closeConnection();
+    await closeConnection();
+  } catch(e) {
+    logger.error(e);
+  }
 });
 
 app.listen(process.env.PORT, () => {

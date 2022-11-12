@@ -3,12 +3,12 @@ const userVerificationModel = require('./userVerification.model')
 const settingsModel = require('./settings.model')
 
 module.exports = async (seq) => {
-    const seq = userModel(seq);
-    await users.sync({ alter: true});
+    const users = userModel(seq);
+    await users.sync();
 
     const userVerifications = userVerificationModel(seq);
-    await userVerifications.sync({ alter: true});
+    await userVerifications.sync();
 
     const settings = settingsModel(seq);
-    await settings.sync({ alter: true});
+    await settings.sync(); 
 }

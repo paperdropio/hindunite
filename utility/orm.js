@@ -1,6 +1,6 @@
 const { Sequelize } = require('sequelize')
 const models = require('../models')
-const config = require('./dbConn')
+const { config } = require('./dbConn')
 
 const sequelizeInstance = new Sequelize({
   database: config.database,
@@ -9,7 +9,7 @@ const sequelizeInstance = new Sequelize({
   host: config.host,
   dialect: 'mysql',
   pool: {
-    max: config.connectionLimit,
+    max: Number(config.connectionLimit),
     min: 1,
   }
 })
