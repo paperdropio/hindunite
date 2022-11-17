@@ -12,7 +12,7 @@ module.exports = (sequelize) => {
 		},
 		userId: {
 			allowNull: false,
-			type: DataTypes.INTEGER,
+			type: DataTypes.UUID,
 		},
 		verificationCode: {
 			allowNull: false,

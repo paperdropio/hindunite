@@ -4,14 +4,9 @@ const { DataTypes } = require('sequelize');
 // This function will automatically receive as parameter the Sequelize connection object.
 module.exports = (sequelize) => {
 	return sequelize.define('settings', {
-		id: {
-			allowNull: false,
-			autoIncrement: true,
-			primaryKey: true,
-			type: DataTypes.INTEGER
-		},
 		settingName: {
 			allowNull: false,
+			primaryKey: true,
 			type: DataTypes.STRING,
 			unique: true
 		},

@@ -16,6 +16,9 @@ const createUserValidator = {
         password: Yup.string().required('password'),
         name: Yup.string().required('name'),
       }),
+      validateOptions: {
+        abortEarly: false,
+      },
     },
   },
 };
@@ -44,6 +47,9 @@ const loginUserValidator = {
         email: Yup.string().email().required('email'),
         password: Yup.string().required('password'),
       }),
+      validateOptions: {
+        abortEarly: false,
+      },
     },
   },
 };
@@ -73,7 +79,7 @@ const verifyEmailValidator = {
   schema: {
     body: {
       yupSchema: Yup.object().shape({
-        email: Yup.string().required('verificationCode'),
+        verificationCode: Yup.string().required('verificationCode'),
       }),
     },
   },

@@ -13,6 +13,7 @@ require('dotenv').config();
 var { pool, closeConnection, sequelizeInstance } = require('./utility/dbConn');
 
 var usersRouter = require('./routes/users');
+var campaignRouter = require('./routes/campaigns');
 
 var app = express();
 
@@ -34,6 +35,7 @@ app.use(express.static(path.join(__dirname, './client/build')));
 app.set('view engine', 'jade');
 
 app.use('/api/users', usersRouter);
+app.use('/api/campaign', campaignRouter);
 app.get("*", (req, res) => {
   res.sendFile(
     path.join(__dirname, "./client/build/index.html")

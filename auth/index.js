@@ -5,6 +5,7 @@ const verificationResult = require('../enums/verificationResult');
 const createUserResult = require('../enums/createUserResult');
 const loginUserResult = require('../enums/loginUserResult');
 const GenericResponse = require('../common/response');
+const { v4: uuid } = require('uuid');
 
 const isEmailRegistered = async ({ email }) => {
 
@@ -39,7 +40,7 @@ const createUser = async ({ email, name, password }) => {
 
     const hash = await bcrypt.hash(password, 10);
 
-    const newUser = users.build({ name, email, password: hash });
+    const newUser = users.build({ id: uuid(), name, email, password: hash });
     await newUser.save();
 
     return GenericResponse.success({ id: newUser.id });
@@ -122,7 +123,7 @@ const sendVerificationEmail = async ({ email }) => {
         },
         {
             where: {
-                userId: id
+                userId: user.id
             }
         }
     );
@@ -132,7 +133,7 @@ const sendVerificationEmail = async ({ email }) => {
     const expiresOn = (new Date());
     expiresOn.setDate(expiresOn.getDate() + 1);
 
-    const verificationRecord = userVerifications.build({ userId: id, verificationCode, expiresOn })
+    const verificationRecord = userVerifications.build({ userId: user.id, verificationCode, expiresOn })
 
     await verificationRecord.save();
 
@@ -158,7 +159,7 @@ const verifyEmail = async ({ verificationCode }) => {
             return GenericResponse.failed({ code: verificationResult.CODE_ALREADY_VERIFIED });
         }
 
-        const user = await users.findByPk(verificationRecord.id);
+        const user = await users.findByPk(verificationRecord.userId);
         if (user.isDeleted || user.isConfirmed) {
             return GenericResponse.failed({ code: verificationResult.USER_ALREADY_VERIFIED });
         }

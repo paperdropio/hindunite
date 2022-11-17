@@ -1,7 +1,6 @@
 const GenericResponse = require('../common/response')
 
 const authenticatedSessionMiddleware = (req, res, next) => {
-    console.log(req.session);
     if(req.session.isAuthenticated){
         next();
         return;
