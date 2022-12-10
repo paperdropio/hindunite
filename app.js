@@ -10,7 +10,8 @@ const { ValidationError } = require('express-json-validator-middleware')
 
 require('dotenv').config();
 
-var { pool, closeConnection, sequelizeInstance } = require('./utility/dbConn');
+var { pool } = require('./utility/dbConn');
+const { seq } = require('./utility/orm');
 
 var usersRouter = require('./routes/users');
 var campaignRouter = require('./routes/campaigns');
@@ -51,7 +52,7 @@ app.use((error, request, response, next) => {
   // Check the error is a validation error
   if (error instanceof ValidationError) {
     // Handle the error
-    response.status(400);
+    response.status(200);
     response.json({ message: 'Error', error: error.validationErrors });
   } else {
     // Pass error on if not a validation error
@@ -62,8 +63,8 @@ app.use((error, request, response, next) => {
 //do something when app is closing
 process.on('exit', async () => {
   try {
-    await sequelizeInstance.closeConnection();
-    await closeConnection();
+    await seq.closeConnection();
+    await pool.closeConnection();
   } catch(e) {
     logger.error(e);
   }

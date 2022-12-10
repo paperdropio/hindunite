@@ -9,11 +9,16 @@
     "server": "nodemon",
     "client": "npm start --prefix client",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "build": "npm run build --prefix client"
+    "build": "npm run build --prefix client",
+    "test": "jest"
+  },
+  "jest": {
+    "collectCoverage": true
   },
   "author": "Deepak Sharma",
   "license": "MIT",
   "dependencies": {
+    "axios": "^1.2.0",
     "bcrypt": "^5.1.0",
     "body-parser": "^1.18.3",
     "cookie-parser": "~1.4.4",
@@ -38,6 +43,7 @@
     "yup": "^0.32.11"
   },
   "devDependencies": {
-    "@types/yup": "^0.32.0"
+    "@types/yup": "^0.32.0",
+    "jest": "^29.3.1"
   }
 }

@@ -31,11 +31,9 @@ const createUser = async ({ email, name, password }) => {
             }
         });
 
-        if (user.isConfirmed) {
+        if (user) {
             return GenericResponse.failed(createUserResult.EMAIL_ALREADY_REGISTERED);
         }
-
-        return GenericResponse.failed(createUserResult.USER_ACCOUNT_NOT_CONFIRMED);
     }
 
     const hash = await bcrypt.hash(password, 10);
@@ -64,21 +62,26 @@ const loginUser = async ({ email, password }) => {
 
         const passwordMatch = await bcrypt.compareSync(password, user.password);
 
+        let result = null;
         if (passwordMatch) {
             user.set({
                 lastLoginOn: (new Date()),
                 numOfFailedPasswordAttempt: 0
             });
+
+            result = GenericResponse.success({ id: user.id });
         }
         else {
             user.set({
                 numOfFailedPasswordAttempt: user.numOfFailedPasswordAttempt + 1
             })
+            
+            result = GenericResponse.failed();
         }
 
         await user.save();
 
-        return GenericResponse.success({ id: user.id });
+        return result;
     }
 
     return GenericResponse.failed();
@@ -175,7 +178,7 @@ const verifyEmail = async ({ verificationCode }) => {
         });
         await user.save();
 
-        return GenericResponse.success({ code: verificationResult.VERIFIED });
+        return GenericResponse.success({ code: verificationResult.VERIFIED, message: { email: user.email } });
     }
 
     return GenericResponse.failed({ code: verificationResult.CODE_NOT_FOUND });

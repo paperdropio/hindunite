@@ -33,6 +33,10 @@ module.exports = (sequelize) => {
 			allowNull: false,
 			type: DataTypes.STRING,
 		},
+		location: {
+			allowNull: false,
+			type: DataTypes.STRING,
+		},
 		totalUsersRequired: {
 			allowNull: false,
 			type: DataTypes.INTEGER,
@@ -47,9 +51,9 @@ module.exports = (sequelize) => {
 			type: DataTypes.BOOLEAN,
 			defaultValue: false
 		},
-		expiresOn: {
+		dueDate: {
 			allowNull: true,
 			type: DataTypes.DATE,
-		},
+		}
 	},);
 };

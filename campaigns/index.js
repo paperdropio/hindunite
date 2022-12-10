@@ -2,7 +2,7 @@ const GenericResponse = require('../common/response');
 const { seq } = require('../utility/orm')
 const { v4: uuid } = require('uuid');
 
-const createCampaign = async ({campaignType, name, description, steps, tags, totalUsersRequired, userId}) => {
+const createCampaign = async ({campaignType, name, description, location, dueDate, steps, tags, totalUsersRequired, userId}) => {
     const { campaigns } = seq.models;
 
     const camp = campaigns.build({id: uuid(), 
@@ -10,6 +10,8 @@ const createCampaign = async ({campaignType, name, description, steps, tags, tot
                     name,   
                     description, 
                     createdByUserId: userId,
+                    location,
+                    dueDate,
                     steps: JSON.stringify(steps ?? ""), 
                     tags: JSON.stringify(tags), 
                     totalUsersRequired});
@@ -22,9 +24,9 @@ const createCampaign = async ({campaignType, name, description, steps, tags, tot
 
 const updateCampaign = async ({campaignId, campaignType, name, description, steps, tags, totalUsersRequired, userId}) => {
     
-    const { campaigns, campaignUsers } = seq.models;
+    const { campaigns } = seq.models;
 
-    const camp = await getCampaign({campaignId});
+    const camp = await getCampaign({ campaignId });
 
     if (camp) {
         if(camp.createdByUserId !== userId){
@@ -42,7 +44,7 @@ const updateCampaign = async ({campaignId, campaignType, name, description, step
             name, 
             description, 
             steps: JSON.stringify(steps ?? ""), 
-            tags: JSON.stringify(tags ?? ""), 
+            tags: JSON.stringify(tags ?? ""),
             totalUsersRequired
         });
 

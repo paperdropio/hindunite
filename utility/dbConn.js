@@ -1,4 +1,4 @@
-const mysql = require('mysql')
+const mysql2 = require('mysql2/promise')
 
 const config = {
   host: process.env.dbHost,
@@ -8,7 +8,7 @@ const config = {
   connectionLimit: process.env.connectionLimit ?? 1,
 }
 
-const pool = mysql.createPool({
+const pool = mysql2.createPool({
   host: config.host,
   user: config.user,
   password: config.password,
@@ -16,12 +16,7 @@ const pool = mysql.createPool({
   connectionLimit: config.connectionLimit,
 })
 
-const closeConnection = async () => {
-    await pool.closeConnection();
-}
-
 module.exports = {
     pool,
-    closeConnection,
     config,
 }

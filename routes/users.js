@@ -4,9 +4,10 @@ const logger = require('../common/logger');
 const { expressYupMiddleware } = require('express-yup-middleware');
 const Yup = require('yup');
 const { seq: { models: { users } } } = require('../utility/orm')
-const { createUser, sendVerificationEmail, loginUser, verifyEmail, logoutUser } = require('../auth')
-const GenericResponse = require('../common/response');
+const { createUser, sendVerificationEmail, loginUser, verifyEmail, logoutUser } = require('../auth');
+const { getUsers } = require('../users');
 const { authenticatedSessionMiddleware } = require('../auth/sessionMiddleware');
+const GenericResponse = require('../common/response');
 
 const createUserValidator = {
   schema: {
@@ -27,13 +28,13 @@ router.post('/createUser', expressYupMiddleware({ schemaValidator: createUserVal
   try {
     const { name, email, password } = req.body;
 
-    const result = await createUser({ email, name, password});
-    if ( result.success ){
-      sendVerificationEmail({id: result.id, email});
+    const result = await createUser({ email, name, password });
+    if (result.success) {
+      sendVerificationEmail({ id: result.id, email });
     }
 
     res.send(result);
-  } catch(e) {
+  } catch (e) {
     logger.error(e);
     res.send(GenericResponse.failed('Failed'));
     //log error
@@ -54,22 +55,22 @@ const loginUserValidator = {
   },
 };
 
-router.post('/loginUser', expressYupMiddleware({ schemaValidator: loginUserValidator }),  async (req, res, next) => {
-  try{
-    const { email, password} = req.body;
+router.post('/loginUser', expressYupMiddleware({ schemaValidator: loginUserValidator }), async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
 
-    const result = await loginUser({ email, password});
-    if ( result.success ){
+    const result = await loginUser({ email, password });
+    if (result.success) {
       req.session.userId = result.id;
       req.session.isAuthenticated = true;
       req.session.email = email;
-      res.send("Logged in");
+      res.send(GenericResponse.success());
       return;
     }
 
     res.send(result);
 
-  } catch(e) {
+  } catch (e) {
     logger.error(e);
     res.send(GenericResponse.failed('Failed'));
   }
@@ -85,15 +86,15 @@ const verifyEmailValidator = {
   },
 };
 
-router.post('/verifyEmail', expressYupMiddleware({ schemaValidator: verifyEmailValidator }),  async (req, res, next) => {
-  try{
+router.post('/verifyEmail', expressYupMiddleware({ schemaValidator: verifyEmailValidator }), async (req, res, next) => {
+  try {
     const { verificationCode } = req.body;
-    
-    const result = await verifyEmail({ verificationCode});
+
+    const result = await verifyEmail({ verificationCode });
 
     res.send(result);
 
-  } catch(e) {
+  } catch (e) {
     logger.error(e);
     res.send(GenericResponse.failed('Failed'));
   }
@@ -109,15 +110,15 @@ const sendVerificationEmailValidator = {
   },
 };
 
-router.post('/sendVerificationEmail', expressYupMiddleware({ schemaValidator: sendVerificationEmailValidator }),  async (req, res, next) => {
-  try{
+router.post('/sendVerificationEmail', expressYupMiddleware({ schemaValidator: sendVerificationEmailValidator }), async (req, res, next) => {
+  try {
     const { email } = req.body;
 
-    const result = await sendVerificationEmail({email});
+    const result = await sendVerificationEmail({ email });
 
     res.send(result);
 
-  } catch(e) {
+  } catch (e) {
     logger.error(e);
     res.send(GenericResponse.failed('Failed'));
     //log error
@@ -126,8 +127,8 @@ router.post('/sendVerificationEmail', expressYupMiddleware({ schemaValidator: se
 
 router.post('/logout', authenticatedSessionMiddleware, async (req, res, next) => {
 
-  try{ 
-    await logoutUser({id: req.session.userId});
+  try {
+    await logoutUser({ id: req.session.userId });
   } catch (e) {
     logger.error(e);
   }
@@ -136,5 +137,32 @@ router.post('/logout', authenticatedSessionMiddleware, async (req, res, next) =>
   res.redirect('/');
 });
 
+
+const getUserEmailValidator = {
+  schema: {
+    body: {
+      yupSchema: Yup.object().shape({
+        userId: Yup.array().of(Yup.string().uuid()).required('userId'),
+      }),
+    },
+  },
+};
+
+router.post('/getUsers', [authenticatedSessionMiddleware,
+  expressYupMiddleware({ schemaValidator: getUserEmailValidator })],
+  async (req, res, next) => {
+    try {
+      const { userId } = req.body;
+
+      const result = await getUsers({ userId });
+
+      res.send(result);
+
+    } catch (e) {
+      logger.error(e);
+      res.send(GenericResponse.failed('Failed'));
+      //log error
+    }
+  });
 
 module.exports = router;
